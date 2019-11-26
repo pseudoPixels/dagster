@@ -12,6 +12,7 @@ sys.path.append(SCRIPT_PATH)
 
 
 TOX_MAP = {
+    SupportedPython.V3_8: "py38",
     SupportedPython.V3_7: "py37",
     SupportedPython.V3_6: "py36",
     SupportedPython.V3_5: "py35",
