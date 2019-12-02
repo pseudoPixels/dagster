@@ -303,16 +303,26 @@ class Timeseries:
 
 class MultivariateTimeseries:
     def __init__(
-        self, input_sequences, output_sequence, input_sequence_names, output_sequence_name
+        self,
+        input_sequences,
+        output_sequence,
+        input_sequence_names,
+        output_sequence_name,
+        elem_type=(int, float),
     ):
         self.input_timeseries_collection = [
-            Timeseries(input_sequence) for input_sequence in input_sequences
+            Timeseries(input_sequence)
+            for input_sequence in check.matrix_param(
+                input_sequences, 'input_sequences', of_type=elem_type
+            )
         ]
-        self.output_timeseries = Timeseries(output_sequence)
-        if len(input_sequence_names) != len(input_sequences):
+        self.output_timeseries = Timeseries(check.list_param(output_sequence, 'output_sequence'))
+        if len(input_sequence_names) != len(self.input_timeseries_collection):
             raise ValueError("Every timeseries needs a name attached to it.")
-        self.input_timeseries_names = input_sequence_names
-        self.output_timeseries_name = output_sequence_name
+        self.input_timeseries_names = check.list_param(
+            input_sequence_names, 'input_sequence_names', of_type=str
+        )
+        self.output_timeseries_name = check.str_param(output_sequence_name, 'output_sequence_name')
 
     def convert_to_snapshot_matrix(self, memory_length):
         input_snapshot_matrix = [
