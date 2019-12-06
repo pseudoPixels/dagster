@@ -89,8 +89,6 @@ def test_all_types_provided():
     all_types = list(environment_schema.all_config_types())
     type_names = set(t.name for t in all_types)
     assert 'SomeModeNamedDict' in type_names
-    assert 'Pipeline.Mode.SomeMode.Environment' in type_names
-    assert 'Pipeline.Mode.SomeMode.Resources.SomeResource' in type_names
 
 
 def test_provided_default_on_resources_config():
@@ -304,17 +302,6 @@ def test_whole_environment():
     )
 
     environment_type = create_environment_type(pipeline_def)
-
-    assert (
-        environment_type.fields['resources'].config_type.name
-        == 'SomePipeline.Mode.TestMode.Resources'
-    )
-    solids_type = environment_type.fields['solids'].config_type
-    assert solids_type.name == 'SomePipeline.SolidsConfigDictionary'
-    assert (
-        solids_type.fields['int_config_solid'].config_type.name
-        == 'SomePipeline.SolidConfig.IntConfigSolid'
-    )
 
     env = EnvironmentConfig.from_config_value(
         throwing_evaluate_config_value(

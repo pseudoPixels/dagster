@@ -10,7 +10,7 @@ from dagster.core.types.config import (
     ConfigTypeKind,
 )
 from dagster.core.types.field import check_opt_field_param
-from dagster.core.types.field_utils import _ConfigHasFields
+from dagster.core.types.field_utils import _ConfigHasFields, build_config_dict
 from dagster.core.types.iterate_types import iterate_config_types
 from dagster.core.types.runtime import construct_runtime_type_dictionary
 from dagster.utils import camelcase, check, ensure_single_item
@@ -25,7 +25,7 @@ from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 def SystemNamedDict(name, fields, description=None):
     '''A SystemNamedDict object is simply a NamedDict intended for internal (dagster) use.
     '''
-    return NamedDict(name, fields, description, ConfigTypeAttributes(is_system_config=True))
+    return build_config_dict(fields, description, is_system_config=True)
 
 
 class _SolidContainerConfigDict(_ConfigHasFields):

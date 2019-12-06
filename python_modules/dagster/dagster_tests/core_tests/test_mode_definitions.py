@@ -153,37 +153,6 @@ def test_execute_multi_mode_with_resources():
     assert mult_mode_result.result_for_solid('apply_to_three').output_value() == 9
 
 
-def test_correct_env_type_names_for_named():
-    pipeline_def = define_multi_mode_with_resources_pipeline()
-
-    mult_type_name = create_environment_type(pipeline_def, 'mult_mode')
-    assert mult_type_name.key == 'MultiModeWithResources.Mode.MultMode.Environment'
-    assert mult_type_name.name == 'MultiModeWithResources.Mode.MultMode.Environment'
-
-    assert (
-        mult_type_name.fields['resources'].config_type.key
-        == 'MultiModeWithResources.Mode.MultMode.Resources'
-    )
-    assert (
-        mult_type_name.fields['resources'].config_type.name
-        == 'MultiModeWithResources.Mode.MultMode.Resources'
-    )
-
-    add_type_name = create_environment_type(pipeline_def, 'add_mode')
-
-    assert add_type_name.key == 'MultiModeWithResources.Mode.AddMode.Environment'
-    assert add_type_name.name == 'MultiModeWithResources.Mode.AddMode.Environment'
-
-    assert (
-        add_type_name.fields['resources'].config_type.key
-        == 'MultiModeWithResources.Mode.AddMode.Resources'
-    )
-    assert (
-        add_type_name.fields['resources'].config_type.name
-        == 'MultiModeWithResources.Mode.AddMode.Resources'
-    )
-
-
 def test_mode_with_resource_deps():
 
     called = {'count': 0}
