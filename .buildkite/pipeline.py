@@ -12,6 +12,7 @@ sys.path.append(SCRIPT_PATH)
 
 
 TOX_MAP = {
+    SupportedPython.V3_8: "py38",
     SupportedPython.V3_7: "py37",
     SupportedPython.V3_6: "py36",
     SupportedPython.V3_5: "py35",
@@ -109,7 +110,7 @@ def wrap_with_docker_compose_steps(
 def python_modules_tox_tests(directory):
     label = directory.replace("/", "-")
     tests = []
-    for version in SupportedPythons:
+    for version in SupportedPythons + [SupportedPython.V3_8]:
         coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
             label=label, version=version
         )
@@ -228,7 +229,7 @@ def publish_airflow_images():
 
 def airflow_tests():
     tests = []
-    for version in SupportedPythons:
+    for version in SupportedPythons + [SupportedPython.V3_8]:
         coverage = ".coverage.dagster-airflow.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("[dagster-airflow] ({ver})".format(ver=TOX_MAP[version]))
@@ -264,7 +265,7 @@ def airflow_tests():
 
 def dagster_postgres_tests():
     tests = []
-    for version in SupportedPythons:
+    for version in SupportedPythons + [SupportedPython.V3_8]:
         coverage = ".coverage.dagster-postgres.{version}.$BUILDKITE_BUILD_ID".format(
             version=version
         )
@@ -310,7 +311,7 @@ def dagster_postgres_tests():
 
 def examples_tests():
     tests = []
-    for version in SupportedPython3s:
+    for version in SupportedPython3s + [SupportedPython.V3_8]:
         coverage = ".coverage.examples.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("examples tests ({ver})".format(ver=TOX_MAP[version]))
@@ -358,7 +359,7 @@ def automation_tests():
 
 def gcp_tests():
     tests = []
-    for version in SupportedPythons:
+    for version in SupportedPythons + [SupportedPython.V3_8]:
         coverage = ".coverage.libraries-dagster-gcp.{version}.$BUILDKITE_BUILD_ID".format(
             version=version
         )
@@ -441,7 +442,7 @@ def library_tests():
 
 def dagit_tests():
     tests = []
-    for version in SupportedPythons:
+    for version in SupportedPythons + [SupportedPython.V3_8]:
         coverage = ".coverage.dagit.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("dagit tests ({ver})".format(ver=TOX_MAP[version]))
@@ -484,7 +485,7 @@ def lakehouse_tests():
 
 def pipenv_smoke_tests():
     tests = []
-    for version in SupportedPythons:
+    for version in SupportedPythons + [SupportedPython.V3_8]:
         is_release = check_for_release()
         smoke_test_steps = (
             [
