@@ -51,6 +51,8 @@ def _do_setup(name='dagster-airflow'):
         extras_require={'kubernetes': kubernetes},
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},
         tests_require=[
+            # https://github.com/tartley/colorama/issues/240
+            'colorama==0.3.9',
             # Airflow should be provided by the end user, not us. For example, GCP Cloud Composer
             # ships a fork of Airflow; we don't want to override it with our install.
             'apache-airflow>=1.10.6',
