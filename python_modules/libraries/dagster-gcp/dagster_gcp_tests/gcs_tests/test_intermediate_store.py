@@ -20,6 +20,7 @@ from dagster import (
     lambda_solid,
     pipeline,
 )
+from dagster.core.types.marshal import PickleBufferBasedSerializationStrategy
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan, scoped_pipeline_context
 from dagster.core.instance import DagsterInstance
@@ -27,17 +28,16 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.runtime import Bool as RuntimeBool
 from dagster.core.types.runtime import RuntimeType
-from dagster.core.types.runtime import String as RuntimeString
 from dagster.core.types.runtime import resolve_to_runtime_type
 from dagster.utils.test import yield_empty_pipeline_context
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
-    def serialize(self, value, write_file_obj):
-        return write_file_obj.write(bytes(value.upper().encode('utf-8')))
+    def serialize(self, value, writable):
+        return writable.write(bytes(value.upper().encode('utf-8')))
 
-    def deserialize(self, read_file_obj):
-        return read_file_obj.read().decode('utf-8').lower()
+    def deserialize(self, readable):
+        return readable.read().decode('utf-8').lower()
 
 
 class LowercaseString(RuntimeType):
@@ -50,6 +50,20 @@ class LowercaseString(RuntimeType):
 
 
 nettest = pytest.mark.nettest
+
+
+@pytest.fixture
+def byte_serializable_string_collection_type():
+    byte_serializable_type = resolve_to_runtime_type(List[String]).inst()
+    byte_serializable_type.serialization_strategy = PickleBufferBasedSerializationStrategy()
+    return byte_serializable_type
+
+
+@pytest.fixture
+def byte_serializable_boolean_collection_type():
+    byte_serializable_type = resolve_to_runtime_type(List[Bool]).inst()
+    byte_serializable_type.serialization_strategy = PickleBufferBasedSerializationStrategy()
+    return byte_serializable_type
 
 
 def define_inty_pipeline():
@@ -175,17 +189,17 @@ def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
         run_id=run_id,
         gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString.inst(): FancyStringGCSTypeStoragePlugin}
+            {LowercaseString.inst(): FancyStringGCSTypeStoragePlugin}
         ),
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_value('hello', context, RuntimeString.inst(), ['obj_name'])
+            intermediate_store.set_value('hello', context, LowercaseString.inst(), ['obj_name'])
 
             assert intermediate_store.has_object(context, ['obj_name'])
             assert (
-                intermediate_store.get_value(context, RuntimeString.inst(), ['obj_name']) == 'hello'
+                intermediate_store.get_value(context, LowercaseString.inst(), ['obj_name']) == 'hello'
             )
 
         finally:
@@ -193,40 +207,41 @@ def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
 
 
 @nettest
-def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
+def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket, byte_serializable_string_collection_type):
     run_id = str(uuid.uuid4())
 
     intermediate_store = GCSIntermediateStore(
         run_id=run_id,
         gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString.inst(): FancyStringGCSTypeStoragePlugin}
+            {LowercaseString.inst(): FancyStringGCSTypeStoragePlugin}
         ),
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(List[String]), ['obj_name']
+                ['hello'], context, byte_serializable_string_collection_type, ['obj_name']
             )
 
 
 @nettest
-def test_gcs_intermediate_store_composite_types_with_custom_serializer_for_inner_type(gcs_bucket):
+def test_gcs_intermediate_store_composite_types_with_custom_serializer_for_inner_type(gcs_bucket, byte_serializable_string_collection_type, byte_serializable_boolean_collection_type):
     run_id = str(uuid.uuid4())
 
     intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
     with yield_empty_pipeline_context(run_id=run_id) as context:
+
         try:
             intermediate_store.set_object(
                 ['foo', 'bar'],
                 context,
-                resolve_to_runtime_type(List[LowercaseString]).inst(),
+                byte_serializable_string_collection_type,
                 ['list'],
             )
             assert intermediate_store.has_object(context, ['list'])
             assert intermediate_store.get_object(
-                context, resolve_to_runtime_type(List[Bool]).inst(), ['list']
+                context, byte_serializable_boolean_collection_type, ['list']
             ).obj == ['foo', 'bar']
 
         finally:
@@ -274,17 +289,19 @@ def test_gcs_intermediate_store(gcs_bucket):
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
+            bytestream_runtime_bool =  RuntimeBool.inst()
+            bytestream_runtime_bool.serialization_strategy = PickleBufferBasedSerializationStrategy()
 
-            intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
+            intermediate_store.set_object(True, context, bytestream_runtime_bool, ['true'])
 
             assert intermediate_store.has_object(context, ['true'])
-            assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
+            assert intermediate_store.get_object(context, bytestream_runtime_bool, ['true']).obj is True
             assert intermediate_store.uri_for_paths(['true']).startswith('gs://')
 
             intermediate_store_2.copy_object_from_prev_run(context, run_id, ['true'])
             assert intermediate_store_2.has_object(context, ['true'])
             assert (
-                intermediate_store_2.get_object(context, RuntimeBool.inst(), ['true']).obj is True
+                intermediate_store_2.get_object(context, bytestream_runtime_bool, ['true']).obj is True
             )
     finally:
         intermediate_store.rm_object(context, ['true'])

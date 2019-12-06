@@ -26,26 +26,37 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):
         return self._write_mode
 
     @abstractmethod
-    def serialize_to_file(self, value, write_path):
+    def serialize(self, value, writable):
         '''Core Serialization Method'''
 
     @abstractmethod
-    def deserialize_from_file(self, read_path):
+    def deserialize(self, readable):
         '''Core Deserialization Method'''
 
 
-class PickleSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
-    def __init__(self, name='pickle', **kwargs):
-        super(PickleSerializationStrategy, self).__init__(name, **kwargs)
+class PickleFileBasedSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
+    def __init__(self, name='pickle_file', **kwargs):
+        super(PickleFileBasedSerializationStrategy, self).__init__(name, **kwargs)
 
-    def serialize_to_file(self, value, write_path):
-        check.str_param(write_path, 'write_path')
+    def serialize(self, value, writable):
+        check.str_param(writable, 'writable')
 
-        with open(write_path, self.write_mode) as write_obj:
+        with open(writable, self.write_mode) as write_obj:
             pickle.dump(value, write_obj, PICKLE_PROTOCOL)
 
-    def deserialize_from_file(self, read_path):
-        check.str_param(read_path, 'read_path')
+    def deserialize(self, readable):
+        check.str_param(readable, 'readable')
 
-        with open(read_path, self.read_mode) as read_obj:
+        with open(readable, self.read_mode) as read_obj:
             return pickle.load(read_obj)
+
+
+class PickleBufferBasedSerializationStrategy(SerializationStrategy):
+    def __init__(self, name='pickle_stream', **kwargs):
+        super(PickleBufferBasedSerializationStrategy, self).__init__(name, **kwargs)
+
+    def serialize(self, value, writable):
+        pickle.dump(value, writable, PICKLE_PROTOCOL)
+
+    def deserialize(self, readable):
+        return pickle.load(readable)

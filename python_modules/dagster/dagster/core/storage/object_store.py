@@ -7,7 +7,7 @@ import six
 
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
-from dagster.core.types.marshal import PickleSerializationStrategy, SerializationStrategy
+from dagster.core.types.marshal import PickleFileBasedSerializationStrategy, SerializationStrategy
 from dagster.utils import mkdir_p
 
 
@@ -68,7 +68,7 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
         return self.sep.join(path_fragments)
 
 
-DEFAULT_SERIALIZATION_STRATEGY = PickleSerializationStrategy()
+DEFAULT_SERIALIZATION_STRATEGY = PickleFileBasedSerializationStrategy()
 
 
 class FilesystemObjectStore(ObjectStore):  # pylint: disable=no-init
@@ -87,7 +87,7 @@ class FilesystemObjectStore(ObjectStore):  # pylint: disable=no-init
         # Ensure path exists
         mkdir_p(os.path.dirname(key))
 
-        serialization_strategy.serialize_to_file(obj, key)
+        serialization_strategy.serialize(obj, key)
 
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.SET_OBJECT,
@@ -103,7 +103,7 @@ class FilesystemObjectStore(ObjectStore):  # pylint: disable=no-init
         check.param_invariant(len(key) > 0, 'key')
         check.inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
 
-        obj = serialization_strategy.deserialize_from_file(key)
+        obj = serialization_strategy.deserialize(key)
 
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.GET_OBJECT,

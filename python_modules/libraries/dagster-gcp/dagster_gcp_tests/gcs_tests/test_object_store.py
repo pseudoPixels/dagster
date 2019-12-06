@@ -3,7 +3,7 @@ from io import BytesIO
 
 from dagster_gcp.gcs.object_store import GCSObjectStore
 
-from dagster.core.types.marshal import PickleSerializationStrategy
+from dagster.core.types.marshal import PickleBufferBasedSerializationStrategy
 
 
 def test_gcs_object_store(gcs_bucket):
@@ -14,7 +14,7 @@ def test_gcs_object_store(gcs_bucket):
     file_obj.write(test_str)
     file_obj.seek(0)
 
-    ss = PickleSerializationStrategy()
+    ss = PickleBufferBasedSerializationStrategy()
 
     key = 'test-file-%s' % uuid.uuid4().hex
     s.set_object(key, file_obj, ss)

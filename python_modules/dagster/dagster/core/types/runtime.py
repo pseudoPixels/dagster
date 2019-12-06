@@ -13,7 +13,7 @@ from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 from .config_schema import InputHydrationConfig, OutputMaterializationConfig
 from .field_utils import Dict
-from .marshal import PickleSerializationStrategy, SerializationStrategy
+from .marshal import PickleFileBasedSerializationStrategy, SerializationStrategy
 from .typing_api import is_closed_python_dict_type
 from .wrapping import WrappingListType, WrappingNullableType, WrappingSetType, WrappingTupleType
 
@@ -57,7 +57,7 @@ class RuntimeType(object):
             serialization_strategy,
             'serialization_strategy',
             SerializationStrategy,
-            PickleSerializationStrategy(),
+            PickleFileBasedSerializationStrategy(),
         )
 
         auto_plugins = check.opt_list_param(auto_plugins, 'auto_plugins', of_type=type)
@@ -374,7 +374,7 @@ def define_python_dagster_type(
         serialization_strategy,
         'serialization_strategy',
         SerializationStrategy,
-        default=PickleSerializationStrategy(),
+        default=PickleFileBasedSerializationStrategy(),
     )
 
     auto_plugins = check.opt_list_param(auto_plugins, 'auto_plugins', of_type=type)
